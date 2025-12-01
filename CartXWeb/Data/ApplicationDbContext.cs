@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CartXWeb.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CartXWeb.Data
 {
@@ -8,5 +9,6 @@ namespace CartXWeb.Data
         {
             
         }
+        public DbSet<Category> Categories { get; set; }
     }
 }
