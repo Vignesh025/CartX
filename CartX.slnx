@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="CartX.DataAccess/CartX.DataAccess.csproj" Id="ed6cc055-4a43-438c-a8d9-99f0c6fdabeb" />
+  <Project Path="CartX.Models/CartX.Models.csproj" Id="5369bab1-8cd5-4220-afae-168122e65882" />
+  <Project Path="CartX.Utilities/CartX.Utilities.csproj" Id="9eb70edd-e585-4590-9c14-41ca863e8713" />
   <Project Path="CartXWeb/CartXWeb.csproj" />
 </Solution>
