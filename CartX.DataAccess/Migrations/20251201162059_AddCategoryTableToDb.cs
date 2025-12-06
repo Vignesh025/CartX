@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace CartXWeb.Migrations
+namespace CartX.DataAccess.Migrations
 {
     /// <inheritdoc />
     public partial class AddCategoryTableToDb : Migration

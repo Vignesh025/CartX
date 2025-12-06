@@ -1,7 +1,7 @@
-﻿using CartXWeb.Models;
+﻿using CartX.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace CartXWeb.Data
+namespace CartX.DataAccess.Data
 {
     public class ApplicationDbContext : DbContext
     {

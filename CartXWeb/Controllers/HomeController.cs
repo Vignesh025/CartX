@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using CartXWeb.Models;
+using CartX.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartXWeb.Controllers

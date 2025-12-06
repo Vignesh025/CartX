@@ -1,5 +1,5 @@
-﻿using CartXWeb.Data;
-using CartXWeb.Models;
+﻿using CartX.DataAccess.Data;
+using CartX.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartXWeb.Controllers

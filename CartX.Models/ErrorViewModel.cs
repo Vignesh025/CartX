@@ -1,4 +1,4 @@
-namespace CartXWeb.Models
+namespace CartX.Models
 {
     public class ErrorViewModel
     {
