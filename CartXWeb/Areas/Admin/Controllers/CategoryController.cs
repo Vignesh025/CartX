@@ -3,7 +3,7 @@ using CartX.DataAccess.Repository.IRepository;
 using CartX.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CartXWeb.Controllers
+namespace CartXWeb.Areas.Admin.Controllers
 {
     public class CategoryController : Controller
     {

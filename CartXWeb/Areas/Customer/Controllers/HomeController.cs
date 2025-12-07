@@ -2,7 +2,7 @@ using System.Diagnostics;
 using CartX.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CartXWeb.Controllers
+namespace CartXWeb.Areas.Customer.Controllers
 {
     public class HomeController : Controller
     {
