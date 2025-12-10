@@ -2,6 +2,7 @@
 using CartX.DataAccess.Repository.IRepository;
 using CartX.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace CartXWeb.Areas.Admin.Controllers
 {
@@ -19,6 +20,13 @@ namespace CartXWeb.Areas.Admin.Controllers
         }
         public IActionResult Create()
         {
+            IEnumerable<SelectListItem> CategoryList = _unitofwork.Category
+                .GetAll().Select(u => new SelectListItem
+                {
+                    Text = u.Name,
+                    Value = u.Id.ToString()
+                });
+            ViewBag.CategoryList = CategoryList;
             return View();
         }
         [HttpPost]
