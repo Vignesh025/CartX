@@ -1,6 +1,7 @@
 ﻿using CartX.DataAccess.Data;
 using CartX.DataAccess.Repository.IRepository;
 using CartX.Models;
+using CartX.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -20,26 +21,38 @@ namespace CartXWeb.Areas.Admin.Controllers
         }
         public IActionResult Create()
         {
-            IEnumerable<SelectListItem> CategoryList = _unitofwork.Category
+            ProductVM productVM = new()
+            {
+                CategoryList = _unitofwork.Category
                 .GetAll().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
-                });
-            ViewBag.CategoryList = CategoryList;
-            return View();
+                }),
+                Product = new Product()
+            };
+            return View(productVM);
         }
         [HttpPost]
-        public IActionResult Create(Product obj)
+        public IActionResult Create(ProductVM productVM)
         {
             if (ModelState.IsValid)
             {
-                _unitofwork.Product.Add(obj);
+                _unitofwork.Product.Add(productVM.Product);
                 _unitofwork.Save();
                 TempData["success"] = "Product Created Successfully"; 
                 return RedirectToAction("Index");
             }
-            return View(obj);
+            else
+            {
+                productVM.CategoryList = _unitofwork.Category.GetAll().Select(u => new SelectListItem
+                {
+                    Text = u.Name,
+                    Value = u.Id.ToString()
+                });
+                return View(productVM);
+
+            }
         }
         public IActionResult Edit(int? id)
         {
