@@ -18,7 +18,7 @@ namespace CartXWeb.Areas.Admin.Controllers
         }
         public IActionResult Index()
         {
-            List<Product> objProductList = _unitofwork.Product.GetAll().ToList();
+            List<Product> objProductList = _unitofwork.Product.GetAll(includeProperties:"Category").ToList();
             return View(objProductList);
         }
         public IActionResult Upsert(int? id)
