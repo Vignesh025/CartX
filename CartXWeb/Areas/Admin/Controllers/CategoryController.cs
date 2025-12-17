@@ -1,11 +1,14 @@
 ﻿using CartX.DataAccess.Data;
 using CartX.DataAccess.Repository.IRepository;
 using CartX.Models;
+using CartX.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartXWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = SD.Role_Admin)]
     public class CategoryController : Controller
     {
         private readonly IUnitOfWork _unitofwork;
