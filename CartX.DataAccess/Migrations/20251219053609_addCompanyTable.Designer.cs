@@ -4,6 +4,7 @@ using CartX.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CartX.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251219053609_addCompanyTable")]
+    partial class addCompanyTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,38 +96,6 @@ namespace CartX.DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Companies");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            City = "Tech City",
-                            Name = "Tech Solution",
-                            PhoneNumber = "1234567890",
-                            PostalCode = "123456",
-                            State = "KA",
-                            StreetAddress = "123 Tech st"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            City = "Tech City 2",
-                            Name = "Tech Solution 2",
-                            PhoneNumber = "1234567891",
-                            PostalCode = "123457",
-                            State = "KA",
-                            StreetAddress = "123 Tech st"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            City = "Tech City 3",
-                            Name = "Tech Solution 3",
-                            PhoneNumber = "1234567892",
-                            PostalCode = "123458",
-                            State = "KA",
-                            StreetAddress = "123 Tech st"
-                        });
                 });
 
             modelBuilder.Entity("CartX.Models.Product", b =>
