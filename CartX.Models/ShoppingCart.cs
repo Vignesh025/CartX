@@ -10,7 +10,7 @@ namespace CartX.Models
     public class ShoppingCart
     {
         public int Id { get; set; }
-        public int productId { get; set; }
+        public int ProductId { get; set; }
         [ForeignKey("productId")]
         [ValidateNever]
         public Product Product { get; set; }
