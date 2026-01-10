@@ -53,6 +53,7 @@ namespace CartXWeb.Areas.Customer.Controllers
             {
                 _unitOfWork.ShoppingCart.Add(shoppingCart);
             }
+            TempData["success"] = "Item added to cart successfully";
 
             _unitOfWork.Save();
 
