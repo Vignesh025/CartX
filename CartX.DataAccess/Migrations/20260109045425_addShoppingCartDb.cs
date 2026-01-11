@@ -16,7 +16,7 @@ namespace CartX.DataAccess.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    productId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
                     Count = table.Column<int>(type: "int", nullable: false),
                     ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -30,8 +30,8 @@ namespace CartX.DataAccess.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ShoppingCarts_Products_productId",
-                        column: x => x.productId,
+                        name: "FK_ShoppingCarts_Products_ProductId",
+                        column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -43,9 +43,9 @@ namespace CartX.DataAccess.Migrations
                 column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ShoppingCarts_productId",
+                name: "IX_ShoppingCarts_ProductId",
                 table: "ShoppingCarts",
-                column: "productId");
+                column: "ProductId");
         }
 
         /// <inheritdoc />
