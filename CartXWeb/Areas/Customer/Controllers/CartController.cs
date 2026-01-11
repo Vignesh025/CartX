@@ -4,6 +4,7 @@ using CartX.Models.ViewModels;
 using CartX.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Stripe.Checkout;
 using System.Security.Claims;
 
 namespace CartXWeb.Areas.Customer.Controllers
@@ -25,12 +26,12 @@ namespace CartXWeb.Areas.Customer.Controllers
             var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
 
             ShoppingCartVM = new()
-                {
-                    ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId, includeProperties: "Product"),
-                    OrderHeader = new()
+            {
+                ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId, includeProperties: "Product"),
+                OrderHeader = new()
             };
 
-            foreach(var cart in ShoppingCartVM.ShoppingCartList)
+            foreach (var cart in ShoppingCartVM.ShoppingCartList)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart);
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
@@ -84,7 +85,7 @@ namespace CartXWeb.Areas.Customer.Controllers
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
 
-            if(applicationUser.CompanyId.GetValueOrDefault()==0)
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
                 //it is a regular customer account
                 ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
@@ -99,7 +100,7 @@ namespace CartXWeb.Areas.Customer.Controllers
 
             _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
             _unitOfWork.Save();
-            foreach(var cart in ShoppingCartVM.ShoppingCartList)
+            foreach (var cart in ShoppingCartVM.ShoppingCartList)
             {
                 OrderDetail orderDetail = new()
                 {
@@ -115,10 +116,42 @@ namespace CartXWeb.Areas.Customer.Controllers
             {
                 //it is a regular customer account and we need to capture payment
                 //stripe logic
+                var domain = "https://localhost:7291/";
+                var options = new Stripe.Checkout.SessionCreateOptions
+                {
+                    SuccessUrl = domain+$"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
+                    CancelUrl = domain + "customer/cart/index",
+                    LineItems = new List<Stripe.Checkout.SessionLineItemOptions>(),
+                    Mode = "payment",
+                };
+                
+                foreach(var item in ShoppingCartVM.ShoppingCartList)
+                {
+                    var sessionLineItem = new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            UnitAmount = (long)(item.Price * 100), // stripe accepts amount in cents/paise, //$20.50 => 2050
+                            Currency = "inr",
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = item.Product.Title,
+                            }
+                        },
+                        Quantity = item.Count
+                    };
+                    options.LineItems.Add(sessionLineItem);
+                }
 
+                var service = new SessionService();
+                Session session = service.Create(options);
+                _unitOfWork.OrderHeader.UpdateStripePaymentId(ShoppingCartVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
+                _unitOfWork.Save();
+                Response.Headers.Add("Location", session.Url);
+                return new StatusCodeResult(303);
             }
 
-            return RedirectToAction(nameof(OrderConfirmation), new {id=ShoppingCartVM.OrderHeader.Id});
+            return RedirectToAction(nameof(OrderConfirmation), new { id = ShoppingCartVM.OrderHeader.Id });
         }
 
         public IActionResult OrderConfirmation(int id)
@@ -137,7 +170,7 @@ namespace CartXWeb.Areas.Customer.Controllers
         public IActionResult Minus(int cartId)
         {
             var cartFromDb = _unitOfWork.ShoppingCart.Get(u => u.Id == cartId);
-            if(cartFromDb.Count <= 1)
+            if (cartFromDb.Count <= 1)
             {
                 _unitOfWork.ShoppingCart.Remove(cartFromDb);
             }
