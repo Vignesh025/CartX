@@ -102,7 +102,7 @@ namespace CartXWeb.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var objProductList = _unitofwork.Product.GetAll(includeProperties: "Category");
+            List<Product> objProductList = _unitofwork.Product.GetAll(includeProperties: "Category").ToList();
             return Json(new { data = objProductList });
         }
         [HttpDelete]
