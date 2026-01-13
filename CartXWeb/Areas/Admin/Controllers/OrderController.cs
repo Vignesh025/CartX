@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Build.Tasks;
+using Stripe;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -17,7 +18,7 @@ namespace CartXWeb.Areas.Admin.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         [BindProperty]
-        public OrderVM OrderVM { get; set; }    
+        public OrderVM OrderVM { get; set; }
         public OrderController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
@@ -36,7 +37,7 @@ namespace CartXWeb.Areas.Admin.Controllers
             return View(OrderVM);
         }
         [HttpPost]
-        [Authorize(Roles =SD.Role_Admin+","+SD.Role_Employee)]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
         public IActionResult UpdateOrderDetail()
         {
             var orderHeaderFromDb = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id);
@@ -57,7 +58,7 @@ namespace CartXWeb.Areas.Admin.Controllers
             _unitOfWork.OrderHeader.Update(orderHeaderFromDb);
             _unitOfWork.Save();
             TempData["success"] = "Order Details Updated Successfully.";
-            return RedirectToAction(nameof(Details), new {orderId = orderHeaderFromDb.Id});
+            return RedirectToAction(nameof(Details), new { orderId = orderHeaderFromDb.Id });
         }
 
         [HttpPost]
@@ -78,7 +79,7 @@ namespace CartXWeb.Areas.Admin.Controllers
             orderHeaderFromDb.Carrier = OrderVM.OrderHeader.Carrier;
             orderHeaderFromDb.OrderStatus = SD.StatusShipped;
             orderHeaderFromDb.ShippingDate = DateTime.Now;
-            if(orderHeaderFromDb.PaymentStatus == SD.PaymentStatusDelayedPayment)
+            if (orderHeaderFromDb.PaymentStatus == SD.PaymentStatusDelayedPayment)
             {
                 orderHeaderFromDb.PaymentDueDate = DateOnly.FromDateTime(DateTime.Now.AddDays(30));
             }
@@ -88,41 +89,65 @@ namespace CartXWeb.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { orderId = OrderVM.OrderHeader.Id });
         }
 
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
+        public IActionResult CancelOrder()
+        {
+            var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id);
+            if (orderHeader.PaymentStatus == SD.PaymentStatusApproved)
+            {
+                var options = new RefundCreateOptions
+                {
+                    Reason = RefundReasons.RequestedByCustomer,
+                    PaymentIntent = orderHeader.PaymentIntentId
+                };
+                var service = new RefundService();
+                Refund refund = service.Create(options);
+                _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusRefunded);
+            }
+            else
+            {
+                _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusCancelled);
+            }
+            _unitOfWork.Save();
+            TempData["success"] = "Order Cancelled Successfully.";
+            return RedirectToAction(nameof(Details), new { orderId = OrderVM.OrderHeader.Id });
+        }
         #region API CALLS
         [HttpGet]
         public IActionResult GetAll(string status)
         {
             IEnumerable<OrderHeader> objOrderHeaders;
 
-            if(User.IsInRole(SD.Role_Admin)||User.IsInRole(SD.Role_Employee))
+            if (User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee))
             {
                 objOrderHeaders = _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
             }
             else
             {
                 var claimsIdentity = (ClaimsIdentity)User.Identity;
-                var userId =claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
 
                 objOrderHeaders = _unitOfWork.OrderHeader.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser");
             }
 
-                switch (status)
-                {
-                    case "pending":
-                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
-                        break;
-                    case "inprocess":
-                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusInProcess);
-                        break;
-                    case "completed":
-                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusShipped);
-                        break;
-                    case "approved":
-                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusApproved);
-                        break;
-                    default:
-                        break;
-                }
+            switch (status)
+            {
+                case "pending":
+                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
+                    break;
+                case "inprocess":
+                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusInProcess);
+                    break;
+                case "completed":
+                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusShipped);
+                    break;
+                case "approved":
+                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusApproved);
+                    break;
+                default:
+                    break;
+            }
             return Json(new { data = objOrderHeaders });
         }
         #endregion
