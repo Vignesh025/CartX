@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Build.Tasks;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace CartXWeb.Areas.Admin.Controllers
 {
@@ -62,25 +63,37 @@ namespace CartXWeb.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAll(string status)
         {
-            IEnumerable<OrderHeader> objOrderHeaders = _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
+            IEnumerable<OrderHeader> objOrderHeaders;
 
-            switch (status)
+            if(User.IsInRole(SD.Role_Admin)||User.IsInRole(SD.Role_Employee))
             {
-                case "pending":
-                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
-                    break;
-                case "inprocess":
-                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusInProcess);
-                    break;
-                case "completed":
-                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusShipped);
-                    break;
-                case "approved":
-                    objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusApproved);
-                    break;
-                default:
-                    break;
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
             }
+            else
+            {
+                var claimsIdentity = (ClaimsIdentity)User.Identity;
+                var userId =claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser");
+            }
+
+                switch (status)
+                {
+                    case "pending":
+                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
+                        break;
+                    case "inprocess":
+                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusInProcess);
+                        break;
+                    case "completed":
+                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusShipped);
+                        break;
+                    case "approved":
+                        objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.StatusApproved);
+                        break;
+                    default:
+                        break;
+                }
             return Json(new { data = objOrderHeaders });
         }
         #endregion
