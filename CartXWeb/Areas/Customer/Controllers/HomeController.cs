@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using CartX.DataAccess.Repository.IRepository;
 using CartX.Models;
+using CartX.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ namespace CartXWeb.Areas.Customer.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IUnitOfWork _unitOfWork;
-        public HomeController(ILogger<HomeController> logger,IUnitOfWork unitofWork)
+        public HomeController(ILogger<HomeController> logger, IUnitOfWork unitofWork)
         {
             _logger = logger;
             _unitOfWork = unitofWork;
@@ -48,14 +49,16 @@ namespace CartXWeb.Areas.Customer.Controllers
                 // shopping cart exists for the user and product
                 cartFromDb.Count += shoppingCart.Count;
                 _unitOfWork.ShoppingCart.Update(cartFromDb);
+                _unitOfWork.Save();
             }
             else
             {
                 _unitOfWork.ShoppingCart.Add(shoppingCart);
+                _unitOfWork.Save();
+                HttpContext.Session.SetInt32(SD.SessionCart,
+                    _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId).Count());
             }
             TempData["success"] = "Item added to cart successfully";
-
-            _unitOfWork.Save();
 
             return RedirectToAction(nameof(Index));
         }
