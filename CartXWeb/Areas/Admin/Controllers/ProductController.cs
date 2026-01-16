@@ -112,6 +112,29 @@ namespace CartXWeb.Areas.Admin.Controllers
             }
         }
 
+        public IActionResult DeleteImage(int imageId)
+        {
+            var imageToBeDeleted = _unitofwork.ProductImage.Get(u => u.Id == imageId);
+            int productId = imageToBeDeleted.ProductId;
+            if(imageToBeDeleted!=null)
+            {
+                if(!string.IsNullOrEmpty(imageToBeDeleted.ImageUrl))
+                {
+                    var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageToBeDeleted.ImageUrl.TrimStart('\\'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+                _unitofwork.ProductImage.Remove(imageToBeDeleted);
+                _unitofwork.Save();
+
+                TempData["success"] = "Deleted Successfully";
+            }
+            return RedirectToAction(nameof(Upsert), new { id = productId });
+        }
+
+
         #region API CALLS
         [HttpGet]
         public IActionResult GetAll()
