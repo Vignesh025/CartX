@@ -61,7 +61,7 @@ namespace CartXWeb.Areas.Admin.Controllers
                 objFromDb.LockoutEnd = DateTime.Now.AddYears(100);
             }
             _db.SaveChanges();
-            return Json(new { success = true, message = "Delete Successful!" });
+            return Json(new { success = true, message = "Operation Successful!" });
         }
         #endregion
     }
