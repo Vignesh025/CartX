@@ -45,7 +45,7 @@ namespace CartXWeb.Areas.Admin.Controllers
             else
             {
                 //Update
-                productVM.Product = _unitofwork.Product.Get(u => u.Id == id);
+                productVM.Product = _unitofwork.Product.Get(u => u.Id == id,includeProperties:"ProductImages");
                 return View(productVM);
             }
         }
