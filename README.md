@@ -38,6 +38,7 @@ CartX is a full-featured e-commerce web application built with ASP.NET Core MVC,
 - **Stripe.net 50.1.0** - Payment processing library
   - **Why**: Industry-standard payment gateway with secure API integration
   - **Usage**: Processes online payments for orders
+  - **Note**: USD currency is used instead of INR as Stripe does not accept INR
 
 ### Cloud Storage
 - **Azure.Storage.Blobs 12.27.0** - Azure Blob Storage client library
@@ -149,8 +150,8 @@ When deploying to Azure App Service, add these settings in the **Configuration**
 - `AzureStorage:ContainerName` = product-images
 
 **Connection Strings:**
-- `ConnectionStrings:DefaultConnection` (Type: SQLAzure)
-- `ConnectionStrings:AzureBlobStorage` (Type: Custom)
+- `DefaultConnection` (Type: SQLAzure)
+- `AzureBlobStorage` (Type: Custom)
 
 **Note**: ASP.NET Core automatically reads from Azure App Service configuration (environment variables), so no code changes are required. The configuration system prioritizes environment variables over `appsettings.json` files.
 
