@@ -737,15 +737,3 @@ wwwroot/
 1. **Configure Azure App Service Settings** (see [Configuration](#configuration) section)
 2. **Set Environment Variable**: `ASPNETCORE_ENVIRONMENT=Production`
 3. **Deploy** using Visual Studio Publish or Azure DevOps
-
----
-
-## License
-
-This project is proprietary software. All rights reserved.
-
----
-
-## Author
-
-CartX Development Team
