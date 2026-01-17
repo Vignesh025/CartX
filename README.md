@@ -91,9 +91,9 @@ CartX/
 
 The application uses environment-specific configuration files:
 
-- `appsettings.json` - Base configuration (committed to Git)
+- `appsettings.json` - Base configuration
 - `appsettings.Development.json` - Development environment settings
-- `appsettings.Production.json` - Production environment settings (excluded from Git)
+- `appsettings.Production.json` - Production environment settings
 
 **⚠️ Important**: All `appsettings.json` files (except `.example` files) are excluded from Git to protect sensitive information.
 
