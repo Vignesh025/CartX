@@ -6,6 +6,7 @@ using CartX.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using CartXWeb.Services;
 
 namespace CartXWeb.Areas.Admin.Controllers
 {
@@ -15,10 +16,13 @@ namespace CartXWeb.Areas.Admin.Controllers
     {
         private readonly IUnitOfWork _unitofwork;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment)
+        private readonly IStorageService _storageService;
+
+        public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment, IStorageService storageService)
         {
             _unitofwork = unitOfWork;
             _webHostEnvironment = webHostEnvironment;
+            _storageService = storageService;
         }
         public IActionResult Index()
         {
@@ -37,7 +41,7 @@ namespace CartXWeb.Areas.Admin.Controllers
                 }),
                 Product = new Product()
             };
-            if(id==null || id==0)
+            if (id == null || id == 0)
             {
                 //Create
                 return View(productVM);
@@ -45,12 +49,12 @@ namespace CartXWeb.Areas.Admin.Controllers
             else
             {
                 //Update
-                productVM.Product = _unitofwork.Product.Get(u => u.Id == id,includeProperties:"ProductImages");
+                productVM.Product = _unitofwork.Product.Get(u => u.Id == id, includeProperties: "ProductImages");
                 return View(productVM);
             }
         }
         [HttpPost]
-        public IActionResult Upsert(ProductVM productVM,List<IFormFile>? files)
+        public async Task<IActionResult> Upsert(ProductVM productVM, List<IFormFile>? files)
         {
             if (ModelState.IsValid)
             {
@@ -63,28 +67,24 @@ namespace CartXWeb.Areas.Admin.Controllers
                     _unitofwork.Product.Update(productVM.Product);
                 }
                 _unitofwork.Save();
-                string wwwRootPath = _webHostEnvironment.WebRootPath;
-                if(files != null)
+
+                if (files != null && files.Count > 0)
                 {
-                    foreach(IFormFile file in files)
+                    foreach (IFormFile file in files)
                     {
                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                        string productPath = @"images\products\product-" + productVM.Product.Id;
-                        string finalPath = Path.Combine(wwwRootPath, productPath);
-                        if(!Directory.Exists(finalPath))
-                        {
-                            Directory.CreateDirectory(finalPath);
-                        }
-                        using (var fileStream = new FileStream(Path.Combine(finalPath, fileName), FileMode.Create))
-                        {
-                            file.CopyTo(fileStream);
-                        }
+                        string blobFileName = $"product-{productVM.Product.Id}/{fileName}";
+
+                        // Upload file to storage service (local or Azure based on environment)
+                        string imageUrl = await _storageService.UploadFileAsync(blobFileName, file.OpenReadStream());
+
                         ProductImage productImage = new()
                         {
-                            ImageUrl = @"\" + productPath + @"\" + fileName,
+                            ImageUrl = imageUrl,
                             ProductId = productVM.Product.Id
                         };
-                        if(productVM.Product.ProductImages == null)
+
+                        if (productVM.Product.ProductImages == null)
                         {
                             productVM.Product.ProductImages = new List<ProductImage>();
                         }
@@ -94,10 +94,9 @@ namespace CartXWeb.Areas.Admin.Controllers
 
                     _unitofwork.Product.Update(productVM.Product);
                     _unitofwork.Save();
-
                 }
-                
-                TempData["success"] = "Product Created/Updated Successfully"; 
+
+                TempData["success"] = "Product Created/Updated Successfully";
                 return RedirectToAction("Index");
             }
             else
@@ -108,29 +107,31 @@ namespace CartXWeb.Areas.Admin.Controllers
                     Value = u.Id.ToString()
                 });
                 return View(productVM);
-
             }
         }
 
-        public IActionResult DeleteImage(int imageId)
+        public async Task<IActionResult> DeleteImage(int imageId)
         {
             var imageToBeDeleted = _unitofwork.ProductImage.Get(u => u.Id == imageId);
             int productId = imageToBeDeleted.ProductId;
-            if(imageToBeDeleted!=null)
+
+            if (imageToBeDeleted != null)
             {
-                if(!string.IsNullOrEmpty(imageToBeDeleted.ImageUrl))
+                if (!string.IsNullOrEmpty(imageToBeDeleted.ImageUrl))
                 {
-                    var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageToBeDeleted.ImageUrl.TrimStart('\\'));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
+                    // Extract blob filename from stored URL
+                    // For local: path like "\images\products\product-1\guid.ext"
+                    // For Azure: full URL like "https://..."
+                    string blobFileName = ExtractBlobFileName(imageToBeDeleted.ImageUrl);
+                    await _storageService.DeleteFileAsync(blobFileName);
                 }
+
                 _unitofwork.ProductImage.Remove(imageToBeDeleted);
                 _unitofwork.Save();
 
                 TempData["success"] = "Deleted Successfully";
             }
+
             return RedirectToAction(nameof(Upsert), new { id = productId });
         }
 
@@ -143,29 +144,55 @@ namespace CartXWeb.Areas.Admin.Controllers
             return Json(new { data = objProductList });
         }
         [HttpDelete]
-        public IActionResult Delete(int? id)
+        public async Task<IActionResult> Delete(int? id)
         {
-            var productToBeDeleted = _unitofwork.Product.Get(u => u.Id == id);
-            if(productToBeDeleted == null)
+            var productToBeDeleted = _unitofwork.Product.Get(u => u.Id == id, includeProperties: "ProductImages");
+            if (productToBeDeleted == null)
             {
                 return Json(new { success = false, message = "Error while Deleting" });
             }
 
-            string productPath = @"images\products\product-" + id;
-            string finalPath = Path.Combine(_webHostEnvironment.WebRootPath, productPath);
-            if (Directory.Exists(finalPath))
+            // Delete all associated images from storage
+            if (productToBeDeleted.ProductImages != null && productToBeDeleted.ProductImages.Count > 0)
             {
-                string[] filePaths = Directory.GetFiles(finalPath);
-                foreach(string filePath in filePaths)
+                foreach (var image in productToBeDeleted.ProductImages)
                 {
-                    System.IO.File.Delete(filePath);
+                    if (!string.IsNullOrEmpty(image.ImageUrl))
+                    {
+                        string blobFileName = ExtractBlobFileName(image.ImageUrl);
+                        await _storageService.DeleteFileAsync(blobFileName);
+                    }
                 }
-                Directory.Delete(finalPath);
             }
 
             _unitofwork.Product.Remove(productToBeDeleted);
             _unitofwork.Save();
             return Json(new { success = true, message = "Delete Successful!" });
+        }
+        #endregion
+
+        #region HELPER METHODS
+        private string ExtractBlobFileName(string imageUrl)
+        {
+            // For local storage: path like "\images\products\product-1\guid.ext"
+            if (imageUrl.StartsWith("\\"))
+            {
+                return imageUrl.TrimStart('\\');
+            }
+
+            // For Azure blob storage: full URL like "https://accountname.blob.core.windows.net/container/product-1/guid.ext"
+            // Extract the blob name (product-1/guid.ext)
+            Uri uri = new Uri(imageUrl);
+            string blobPath = uri.AbsolutePath;
+            // Remove leading slash and container name
+            var segments = blobPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2)
+            {
+                // Join last segments to get "product-{id}/filename"
+                return string.Join('/', segments.Skip(1));
+            }
+
+            return imageUrl;
         }
         #endregion
     }

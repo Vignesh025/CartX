@@ -7,6 +7,8 @@ using CartX.Utilities;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Stripe;
 using CartX.DataAccess.DbInitializer;
+using Azure.Storage.Blobs;
+using CartXWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +39,32 @@ builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<IEmailSender,EmailSender>();
+
+// Configure Storage Service based on Azure Blob Storage availability and environment
+var blobConnectionString = builder.Configuration.GetConnectionString("AzureBlobStorage");
+var blobContainerName = builder.Configuration.GetSection("AzureStorage:ContainerName").Get<string>();
+
+if (!string.IsNullOrEmpty(blobConnectionString) && builder.Environment.IsProduction())
+{
+    // Use Azure Blob Storage in Production (only if connection string is configured)
+    try
+    {
+        BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
+        BlobContainerClient blobContainerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
+        builder.Services.AddSingleton(blobContainerClient);
+        builder.Services.AddSingleton<IStorageService, AzureBlobStorageService>();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Failed to configure Azure Blob Storage: {ex.Message}. Falling back to local storage.");
+        builder.Services.AddScoped<IStorageService, LocalStorageService>();
+    }
+}
+else
+{
+    // Use Local Storage in Development or when Azure is not configured
+    builder.Services.AddScoped<IStorageService, LocalStorageService>();
+}
 
 var app = builder.Build();
 
