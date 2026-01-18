@@ -12,8 +12,8 @@ CartX is a full-featured e-commerce web application built with ASP.NET Core MVC,
 - [Getting Started](#getting-started)
 
 ---
-
-## Technologies Used
+<details>
+<summary><h2 id="technologies-used"> Technologies Used </h2></summary>
 
 ### Core Framework
 - **ASP.NET Core 10.0** - Modern, cross-platform web framework
@@ -69,6 +69,8 @@ CartX is a full-featured e-commerce web application built with ASP.NET Core MVC,
 - **TinyMCE** - Rich text editor
   - **Why**: WYSIWYG editor for content creation
   - **Usage**: Product description editing
+
+</details>
 
 ---
 
