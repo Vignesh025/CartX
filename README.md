@@ -7,7 +7,7 @@ CartX is a full-featured e-commerce web application built with ASP.NET Core MVC,
 - [Technologies Used](#technologies-used)
 - [Project Structure](#project-structure)
 - [Configuration](#configuration)
-- [Architecture & Separation of Concerns](#architecture--separation-of-concerns)
+- [Architecture & Separation of Concerns](#architecture-separation-of-concerns)
 - [Detailed Component Documentation](#detailed-component-documentation)
 - [Getting Started](#getting-started)
 
@@ -74,7 +74,8 @@ CartX is a full-featured e-commerce web application built with ASP.NET Core MVC,
 
 ---
 
-## Project Structure
+<details>
+<summary><h2 id="project-structure"> Project Structure </h2></summary>
 
 The project follows a clean architecture pattern with clear separation of concerns:
 
@@ -85,10 +86,12 @@ CartX/
 ├── CartX.Utilities/        # Utility classes and helpers
 └── CartXWeb/              # Web application (MVC)
 ```
+</details>
 
 ---
 
-## Configuration
+<details>
+<summary><h2 id="configuration"> Configuration </h2></summary>
 
 ### AppSettings Configuration
 
@@ -157,9 +160,12 @@ When deploying to Azure App Service, add these settings in the **Configuration**
 
 **Note**: ASP.NET Core automatically reads from Azure App Service configuration (environment variables), so no code changes are required. The configuration system prioritizes environment variables over `appsettings.json` files.
 
+</details>
+
 ---
 
-## Architecture & Separation of Concerns
+<details>
+<summary><h2 id="architecture-separation-of-concerns"> Architecture & Separation of Concerns </h2></summary>
 
 The application follows the **Repository Pattern** and **Unit of Work Pattern** to ensure clean separation of concerns:
 
@@ -193,9 +199,11 @@ The application follows the **Repository Pattern** and **Unit of Work Pattern** 
 - **Scalability**: Easy to add new features without affecting existing code
 - **Reusability**: Repository pattern allows reuse of data access logic
 
----
+</details>
 
-## Detailed Component Documentation
+---
+<details>
+<summary><h2 id="detailed-component-documentation"> Detailed Component Documentation </h2></summary>
 
 ### CartX.DataAccess
 
@@ -696,9 +704,11 @@ wwwroot/
 - Environment is `Production`
 - Falls back to local storage if Azure configuration fails
 
----
+</details>
 
-## Getting Started
+---
+<details>
+<summary><h2 id="getting-started"> Getting Started </h2></summary>
 
 ### Prerequisites
 
@@ -740,3 +750,5 @@ wwwroot/
 1. **Configure Azure App Service Settings** (see [Configuration](#configuration) section)
 2. **Set Environment Variable**: `ASPNETCORE_ENVIRONMENT=Production`
 3. **Deploy** using Visual Studio Publish or Azure DevOps
+
+</details>
